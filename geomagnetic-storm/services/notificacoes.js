@@ -5,7 +5,7 @@ const WHATSAPP_ACCESS_TOKEN = process.env.WHATSAPP_ACCESS_TOKEN;
 const WHATSAPP_PHONE_NUMBER_ID = process.env.WHATSAPP_PHONE_NUMBER_ID;
 const MY_PHONE_NUMBER = process.env.MY_PHONE_NUMBER;
 
-function formatMessage(event) {
+function formatMessage(event, aiAnalysis = null) {
     if (!event) return "⚠️ Evento solar detectado, mas sem detalhes disponíveis.";
 
     let eventType = "";
@@ -42,20 +42,29 @@ function formatMessage(event) {
             eventDetails = "Um evento solar significativo foi detectado.";
     }
 
-    return `${eventType}\n\n${eventDetails}\n\n` +
+    let baseMessage = `${eventType}\n\n${eventDetails}\n\n` +
            `🌐 Data e hora da detecção: ${event.date ? event.date.toLocaleString('pt-BR', { timeZone: 'UTC' }) : "Desconhecida"}\n` +
            `- Evento: ${event.description || "Sem descrição"}\n\n` +
            `🌍 Locais afetados: ${event.affectedAreas?.join(', ') || "Desconhecido"}\n` +
            `🔗 Mais informações: ${event.link || 'Não disponível'}`;
+
+    // 🤖 Adiciona análise de IA se disponível
+    if (aiAnalysis && aiAnalysis.generated) {
+        baseMessage += `\n\n🤖 ANÁLISE DE IA:\n` +
+                      `⚡ Nível de Risco: ${aiAnalysis.riskLevel.toUpperCase()}\n` +
+                      `📊 Eventos Analisados: ${aiAnalysis.eventsProcessed}`;
+    }
+
+    return baseMessage;
 }
 
 /*Envia alertas via WhatsApp para eventos solares detectados
  */
-async function sendAlerts(events) {
+async function sendAlerts(events, aiAnalysis = null) {
     if (!events || events.length === 0) return;
 
     for (const event of events) {
-        const message = formatMessage(event);
+        const message = formatMessage(event, aiAnalysis);
 
         try {
             console.log(`🚀 Enviando alerta para ${MY_PHONE_NUMBER}`);
@@ -77,6 +86,32 @@ async function sendAlerts(events) {
             console.log(`✅ Alerta enviado para ${MY_PHONE_NUMBER}`);
         } catch (error) {
             console.error(`❌ Erro ao enviar alerta:`, error.response?.data || error.message);
+        }
+    }
+    
+    // 🤖 Envia análise detalhada de IA se disponível
+    if (aiAnalysis && aiAnalysis.generated && aiAnalysis.fullAnalysis) {
+        try {
+            const aiMessage = `🤖 RELATÓRIO DETALHADO DE IA:\n\n${aiAnalysis.fullAnalysis}\n\n⚡ Risco: ${aiAnalysis.riskLevel.toUpperCase()}\n📅 ${aiAnalysis.timestamp}`;
+            
+            await axios.post(
+                `https://graph.facebook.com/v21.0/${WHATSAPP_PHONE_NUMBER_ID}/messages`,
+                {
+                    messaging_product: "whatsapp",
+                    to: MY_PHONE_NUMBER,
+                    type: "text",
+                    text: { body: aiMessage },
+                },
+                {
+                    headers: {
+                        Authorization: `Bearer ${WHATSAPP_ACCESS_TOKEN}`,
+                        "Content-Type": "application/json",
+                    },
+                }
+            );
+            console.log(`✅ Relatório de IA enviado por WhatsApp`);
+        } catch (error) {
+            console.error(`❌ Erro ao enviar relatório de IA:`, error.response?.data || error.message);
         }
     }
 }

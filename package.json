@@ -1,10 +1,15 @@
 {
-  "name": "nasaapp",
-  "version": "1.0.0",
-  "description": "geomagnetic-storm",
-  "main": "index.js",
+  "name": "astronomy-alerts",
+  "version": "2.0.0",
+  "description": "Sistema de alertas astronômicos para hobbyistas - Aurora, tempestades solares e condições de observação",
+  "main": "astronomy-app.js",
   "scripts": {
-    "start": "node index.js"
+    "start": "node astronomy-app.js",
+    "aurora-alert": "cd geomagnetic-storm && node astronomy-alerts.js",
+    "check-conditions": "cd geomagnetic-storm && node astronomy-alerts.js",
+    "monitor-24h": "cd geomagnetic-storm && node astronomy-monitor.js",
+    "whatsapp-menu": "cd geomagnetic-storm && node whatsapp-menu.js",
+    "astronomy-bot": "cd geomagnetic-storm && node whatsapp-menu.js"
   },
   "dependencies": {
     "agent-base": "^6.0.2",
@@ -49,6 +54,7 @@
     "node-cron": "^3.0.3",
     "node-schedule": "^2.1.1",
     "object-inspect": "^1.13.4",
+    "openai": "^6.8.1",
     "proxy-from-env": "^1.1.0",
     "qs": "^6.14.0",
     "safe-buffer": "^5.2.1",
