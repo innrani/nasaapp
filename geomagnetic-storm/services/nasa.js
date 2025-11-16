@@ -72,7 +72,6 @@ async function fetchSolarEventsInRange(startDate, endDate) {
     }
 }
 
-// Função original mantida para compatibilidade
 async function fetchSolarEvents() {
     return await fetchSolarEventsWeek();
 }

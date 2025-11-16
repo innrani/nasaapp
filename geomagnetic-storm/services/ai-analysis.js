@@ -333,6 +333,7 @@ function generateOfflineAnalysis(events, riskLevel) {
 }
 
 module.exports = {
+    generateAIAnalysis: generateIntelligentAnalysis,
     generateIntelligentAnalysis,
     generateSpecificRecommendations,
     enhancedEventClassification,

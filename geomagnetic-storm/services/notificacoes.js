@@ -48,7 +48,7 @@ function formatMessage(event, aiAnalysis = null) {
            `🌍 Locais afetados: ${event.affectedAreas?.join(', ') || "Desconhecido"}\n` +
            `🔗 Mais informações: ${event.link || 'Não disponível'}`;
 
-    // 🤖 Adiciona análise de IA se disponível
+    //  Adiciona análise de IA se disponível
     if (aiAnalysis && aiAnalysis.generated) {
         baseMessage += `\n\n🤖 ANÁLISE DE IA:\n` +
                       `⚡ Nível de Risco: ${aiAnalysis.riskLevel.toUpperCase()}\n` +
