@@ -240,20 +240,6 @@ node whatsapp-menu.js 13   # Todos os eventos GST
 - 🌍 Internacionalização (i18n)
 - 📱 Interface web complementar
 
-## 📄 Licença
-
-Este projeto está sob a licença MIT. Veja o arquivo [LICENSE](LICENSE) para mais detalhes.
-
-
-## 🙏 Agradecimentos
-
-- **NASA** - Por fornecer dados científicos gratuitos e acessíveis
-- **WhatsApp Business** - Pela plataforma de comunicação
-- **Groq** - Pela API de IA avançada
-- **Comunidade Astronômica** - Pelo feedback e sugestões
-
----
-
 <div align="center">
 
 **🔭 Feito com ❤️ para a comunidade astronômica**
