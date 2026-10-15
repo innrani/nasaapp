@@ -21,27 +21,35 @@ async function fetchSolarEventsInRange(startDate, endDate) {
     try {
         console.log(`📡 Buscando eventos solares de ${startDate} até ${endDate}...`);
         const endpoints = ['GST', 'CME', 'FLR', 'SEP', 'HSS'];
-        
+
         let events = [];
 
         for (const endpoint of endpoints) {
             const url = `${NASA_BASE_URL}/${endpoint}?startDate=${startDate}&endDate=${endDate}&api_key=${NASA_API_KEY}`;
             console.log(`🔍 Consultando ${endpoint}: ${url}`);
-            
-            const response = await axios.get(url);
-            const data = response.data;
 
-            if (data.length === 0) continue;
+            const response = await axios.get(url, { timeout: 30000 });
+            const payload = response.data;
+            const data = Array.isArray(payload)
+                ? payload
+                : Array.isArray(payload?.items)
+                    ? payload.items
+                    : [];
 
-            // Processa os dados conforme o tipo de evento
+            if (!data.length) {
+                const hasApiError = payload && typeof payload === 'object' && (payload.error || payload.message || payload.code);
+                if (hasApiError) {
+                    console.warn(`⚠️ NASA DONKI (${endpoint}) respondeu com erro:`, payload.error || payload.message || payload.code);
+                }
+                continue;
+            }
+
             const processedData = data.map(event => {
-                // Função para criar data segura
                 const createSafeDate = (event) => {
-                    const timeString = event.startTime || event.cmeStartTime || event.flrStartTime || event.hssStartTime;
+                    const timeString = event.startTime || event.cmeStartTime || event.flrStartTime || event.hssStartTime || event.eventTime;
                     if (!timeString) return new Date();
-                    
+
                     const date = new Date(timeString);
-                    // Verifica se a data é válida
                     if (isNaN(date.getTime())) {
                         console.warn(`⚠️ Data inválida encontrada: ${timeString}, usando data atual`);
                         return new Date();
@@ -49,16 +57,18 @@ async function fetchSolarEventsInRange(startDate, endDate) {
                     return date;
                 };
 
+                const eventId = event.gstID || event.activityID || event.id || 'N/A';
+
                 return {
-                    id: event[event.hasOwnProperty('gstID') ? 'gstID' : 'activityID'] || 'N/A',
-                    type: endpoint, // Indica o tipo de evento (ex: GST, CME, etc.)
-                    severity: endpoint === 'GST' 
-                        ? event.allKpIndex?.some(kp => kp.kpIndex > 7) ? 'alta' : 'moderada' 
-                        : 'indefinida', // Apenas tempestades geomagnéticas (GST) possuem um KpIndex
-                    description: `Evento solar (${endpoint}): ${event.note || 'Sem descrição detalhada.'}`,
+                    id: eventId,
+                    type: endpoint,
+                    severity: endpoint === 'GST'
+                        ? event.allKpIndex?.some(kp => kp.kpIndex > 7) ? 'alta' : 'moderada'
+                        : 'indefinida',
+                    description: `Evento solar (${endpoint}): ${event.note || event.summary || event.catalog || 'Sem descrição detalhada.'}`,
                     date: createSafeDate(event),
-                    affectedAreas: ['América do Norte', 'Europa', 'Ásia'], // Ajustável conforme necessário
-                    link: event.link || 'https://ccmc.gsfc.nasa.gov/donki/' // Link para mais informações
+                    affectedAreas: ['América do Norte', 'Europa', 'Ásia'],
+                    link: event.link || 'https://ccmc.gsfc.nasa.gov/donki/'
                 };
             });
 
@@ -68,6 +78,9 @@ async function fetchSolarEventsInRange(startDate, endDate) {
         return events;
     } catch (error) {
         console.error('❌ Erro ao obter dados da NASA:', error.message);
+        if (error.response) {
+            console.error('📌 Resposta da API:', error.response.status, error.response.data);
+        }
         return [];
     }
 }

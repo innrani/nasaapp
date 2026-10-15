@@ -274,6 +274,16 @@ class AstronomyTerminalApp {
 
     async getCompleteAIAnalysis(events) {
         console.log('🤖 GERANDO ANÁLISE COMPLETA COM IA...\n');
+
+        if (!Array.isArray(events) || events.length === 0) {
+            console.log('📊 Nenhum evento foi carregado para análise.');
+            console.log('Isso pode acontecer porque não há eventos no período consultado ou porque a API NASA retornou vazio.');
+            console.log('👉 Ação recomendada: repetir a consulta em alguns minutos ou verificar o intervalo de datas.\n');
+            console.log('🤖 ANÁLISE DE INTELIGÊNCIA ARTIFICIAL\n');
+            console.log('📊 NENHUM EVENTO SOLAR DETECTADO');
+            console.log('Não há registros significativos no intervalo consultado.');
+            return true;
+        }
         
         try {
             const aiAnalysis = await generateAIAnalysis(events);

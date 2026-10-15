@@ -21,11 +21,44 @@ if (!hasGroq) {
     console.log('🔗 Crie sua chave gratuita em: https://console.groq.com/');
 }
 
-// Configuração Groq (IA Gratuita)
+// Configuração Groq
 const groqConfig = hasGroq ? {
     apiKey: process.env.GROQ_API_KEY,
     baseURL: 'https://api.groq.com/openai/v1'
 } : null;
+
+function buildNoEventsAnalysis() {
+    const analysis = `📊 NENHUM EVENTO SOLAR DETECTADO
+
+Não há registros significativos no intervalo consultado.
+
+Possíveis causas:
+• não existiram eventos relevantes nesse período;
+• a API da NASA retornou resposta vazia;
+• o filtro de data não encontrou eventos compatíveis;
+• a consulta falhou antes de carregar os dados.
+
+Ação recomendada:
+• continuar monitoramento em rotina;
+• tentar uma nova consulta em alguns minutos;
+• verificar se a API NASA respondeu com dados válidos.`;
+
+    return {
+        fullAnalysis: analysis,
+        summary: 'Nenhum evento solar significativo detectado no momento.',
+        riskLevel: 'baixo',
+        recommendations: [
+            'Continuar monitoramento de rotina',
+            'Repetir a consulta em alguns minutos',
+            'Verificar se a API da NASA retornou dados vazios'
+        ],
+        impactAnalysis: 'Condições espaciais normais no período consultado.',
+        eventsProcessed: 0,
+        timestamp: new Date().toISOString(),
+        generated: true,
+        mode: 'no-data'
+    };
+}
 
 /**
  * Gera análise inteligente de eventos solares usando IA
@@ -34,12 +67,7 @@ const groqConfig = hasGroq ? {
  */
 async function generateIntelligentAnalysis(events) {
     if (!events || events.length === 0) {
-        return {
-            summary: "Nenhum evento solar significativo detectado no momento.",
-            riskLevel: "baixo",
-            recommendations: ["Continuar monitoramento de rotina"],
-            impactAnalysis: "Condições espaciais normais"
-        };
+        return buildNoEventsAnalysis();
     }
 
     try {
@@ -271,70 +299,100 @@ function generateOfflineAnalysis(events, riskLevel) {
     const hasGST = eventTypes.includes('GST');
     const hasCME = eventTypes.includes('CME');
     const hasFLR = eventTypes.includes('FLR');
-    
+    const hasSEP = eventTypes.includes('SEP');
+    const hasHSS = eventTypes.includes('HSS');
+
+    const countsByType = {
+        GST: events.filter(e => e.type === 'GST').length,
+        CME: events.filter(e => e.type === 'CME').length,
+        FLR: events.filter(e => e.type === 'FLR').length,
+        SEP: events.filter(e => e.type === 'SEP').length,
+        HSS: events.filter(e => e.type === 'HSS').length
+    };
+
     let analysis = `📊 ANÁLISE AUTOMATIZADA DE EVENTOS SOLARES\n\n`;
     analysis += `🔍 RESUMO EXECUTIVO:\n`;
-    analysis += `Detectados ${events.length} eventos solares significativos. `;
-    
+    analysis += `Foram detectados ${events.length} eventos solares no período analisado, distribuídos em ${countsByType.GST || 0} GST, ${countsByType.CME || 0} CME, ${countsByType.FLR || 0} FLR, ${countsByType.SEP || 0} SEP e ${countsByType.HSS || 0} HSS. `;
+
     if (hasGST) {
         const gstEvents = events.filter(e => e.type === 'GST');
-        const severeGst = gstEvents.filter(e => e.severity === 'alta').length;
+        const severeGst = gstEvents.filter(e => e.severity === 'alta' || e.severity === 'crítica' || e.severity === 'crítica').length;
         if (severeGst > 0) {
-            analysis += `Identificadas ${severeGst} tempestade(s) geomagnética(s) severa(s), `;
+            analysis += `Houve ${severeGst} tempestade(s) geomagnética(s) de severidade elevada, `;
         }
-        analysis += `que podem impactar sistemas de GPS e comunicações. `;
+        analysis += `o que pode afetar GPS, navegação e comunicações de rádio. `;
     }
-    
+
     if (hasCME) {
-        analysis += `Ejeções de massa coronal detectadas, indicando possíveis distúrbios na magnetosfera terrestre. `;
+        analysis += `As ejeções de massa coronal indicam possível interação com a magnetosfera terrestre e aumento de perturbações espaciais. `;
     }
-    
+
     if (hasFLR) {
-        analysis += `Explosões solares registradas, podendo causar blackouts de rádio. `;
+        analysis += `Explosões solares foram registradas, com potencial para interferência em frequências de rádio e emissões ionosféricas. `;
     }
-    
+
+    if (hasSEP) {
+        analysis += `Partículas energéticas foram observadas, sugerindo risco para satélites e sistemas sensíveis em órbita. `;
+    }
+
+    if (hasHSS) {
+        analysis += `Ventos solares rápidos também foram identificados, contribuindo para a dinâmica da atividade geomagnética. `;
+    }
+
+    if (!hasGST && !hasCME && !hasFLR && !hasSEP && !hasHSS) {
+        analysis += `Apesar do período observado, não houve padrão de eventos relevantes para indicar distúrbios espaciais intensos. `;
+    }
+
     analysis += `\n\n⚡ NÍVEL DE RISCO: ${riskLevel.toUpperCase()}\n\n`;
-    
+
     analysis += `🎯 IMPACTOS ESPERADOS:\n`;
-    
+
     if (riskLevel === 'crítico' || riskLevel === 'alto') {
-        analysis += `• Sistemas de comunicação: Alta probabilidade de interferências\n`;
-        analysis += `• GPS e navegação: Possível degradação significativa de precisão\n`;
-        analysis += `• Rede elétrica: Risco de flutuações em altas latitudes\n`;
-        analysis += `• Operações de satélites: Recomenda-se modo de proteção\n`;
+        analysis += `• Sistemas de comunicação: alta probabilidade de interferência\n`;
+        analysis += `• GPS e navegação: degradação relevante em posicionamento e sincronização\n`;
+        analysis += `• Rede elétrica: risco de flutuações e sobretensão em altas latitudes\n`;
+        analysis += `• Operações de satélites: necessidade de proteção e monitoramento especial\n`;
     } else if (riskLevel === 'moderado') {
-        analysis += `• Sistemas de comunicação: Interferências menores possíveis\n`;
-        analysis += `• GPS e navegação: Pequena degradação de precisão\n`;
-        analysis += `• Aviação: Monitorar rotas polares\n`;
+        analysis += `• Sistemas de comunicação: efeitos moderados e variáveis\n`;
+        analysis += `• GPS e navegação: pequena perda de precisão eventual\n`;
+        analysis += `• Aviação: atenção em rotas polares e regiões de alta latitude\n`;
     } else {
-        analysis += `• Impactos mínimos esperados na infraestrutura\n`;
-        analysis += `• Possível visualização de auroras em altas latitudes\n`;
+        analysis += `• Impactos mínimos esperados na infraestrutura tecnológica\n`;
+        analysis += `• Possível visibilidade de auroras em regiões de alta latitude\n`;
     }
-    
+
     analysis += `\n🔮 RECOMENDAÇÕES:\n`;
-    analysis += `• Continuar monitoramento ativo dos eventos\n`;
-    analysis += `• Verificar sistemas críticos de comunicação\n`;
-    
+    analysis += `• Continuar monitoramento ativo dos eventos espaciais\n`;
+    analysis += `• Verificar sistemas críticos de comunicação e navegação\n`;
+    analysis += `• Manter atenção a satélites, redes elétricas e voos em regiões polares\n`;
+
     if (hasGST) {
-        analysis += `• Operadores de rede elétrica devem estar em alerta\n`;
+        analysis += `• Operadores de rede elétrica devem estar em alerta durante a janela geomagnética\n`;
     }
-    
+
     if (hasCME) {
-        analysis += `• Considerar proteção de satélites sensíveis\n`;
+        analysis += `• Considerar proteção de satélites sensíveis e protocolos de contingência\n`;
     }
-    
+
+    if (hasFLR || hasSEP) {
+        analysis += `• Monitorar possíveis interações de rádio e levantamentos de partículas energéticas\n`;
+    }
+
     analysis += `\n⏰ DURAÇÃO ESTIMADA:\n`;
-    analysis += `Baseado no tipo e intensidade dos eventos, os efeitos podem persistir por 6-48 horas.\n`;
-    
-    analysis += `\n📝 NOTA: Esta análise foi gerada automaticamente usando algoritmos baseados em regras. `;
-    analysis += `Para análises mais detalhadas, configure a integração com OpenAI GPT.`;
-    
+    analysis += `Baseado no tipo e na intensidade dos eventos, os efeitos podem persistir por 6 a 48 horas.\n`;
+
+    analysis += `\n🧭 CONCLUSÃO:\n`;
+    analysis += `A atividade solar neste período mostrou um conjunto de fenômenos que, em conjunto, podem influenciar a ionosfera, as comunicações, a navegação e a operação de infraestrutura crítica. A avaliação geral indica que a resposta do sistema depende da intensidade e do acoplamento entre os diferentes tipos de evento.`;
+
+    analysis += `\n\n📝 NOTA: Esta análise foi gerada automaticamente usando algoritmos baseados em regras e consolidando os principais tipos de eventos observados pela NASA.`;
+
     return analysis;
 }
 
 module.exports = {
     generateAIAnalysis: generateIntelligentAnalysis,
     generateIntelligentAnalysis,
+    buildNoEventsAnalysis,
     generateSpecificRecommendations,
     enhancedEventClassification,
     determineRiskLevel
